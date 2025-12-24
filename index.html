@@ -315,12 +315,43 @@
             const dbg = document.getElementById('debug-txt');
             if(dbg) dbg.innerText = `Photos Loaded: ${loadedCount} / ${PHOTO_CONFIG.count}`; 
         }
+        
         const tryLoadPhoto = (index) => {
-            loader.load(`${PHOTO_CONFIG.path}${PHOTO_CONFIG.prefix}${index}.jpg`, (texture) => { texture.colorSpace = THREE.SRGBColorSpace; createPhotoMesh(texture, index - 1, `Photo ${index}`); checkLoad(); }, undefined, (err) => { 
-                loader.load(`${PHOTO_CONFIG.path}${PHOTO_CONFIG.prefix}${index}.png`, (texture) => { texture.colorSpace = THREE.SRGBColorSpace; createPhotoMesh(texture, index - 1, `Photo ${index}`); checkLoad(); });
-            });
+            // 1. 先尝试加载 .JPG (大写)
+            loader.load(`${PHOTO_CONFIG.path}${PHOTO_CONFIG.prefix}${index}.JPG`, 
+                (texture) => { 
+                    texture.colorSpace = THREE.SRGBColorSpace; 
+                    createPhotoMesh(texture, index - 1, `Photo ${index}`); 
+                    checkLoad(); 
+                }, 
+                undefined, 
+                (err) => { 
+                    // 2. 如果失败，再尝试加载 .PNG (大写)
+                    loader.load(`${PHOTO_CONFIG.path}${PHOTO_CONFIG.prefix}${index}.PNG`, 
+                        (texture) => { 
+                            texture.colorSpace = THREE.SRGBColorSpace; 
+                            createPhotoMesh(texture, index - 1, `Photo ${index}`); 
+                            checkLoad(); 
+                        },
+                        undefined,
+                        // 3. 如果还失败，尝试小写 .jpg (兼容性兜底)
+                        (err2) => {
+                             loader.load(`${PHOTO_CONFIG.path}${PHOTO_CONFIG.prefix}${index}.jpg`, 
+                                (texture) => {
+                                    texture.colorSpace = THREE.SRGBColorSpace; 
+                                    createPhotoMesh(texture, index - 1, `Photo ${index}`); 
+                                    checkLoad(); 
+                                }
+                             );
+                        }
+                    );
+                }
+            );
         };
-        for (let i = 1; i <= PHOTO_CONFIG.count; i++) tryLoadPhoto(i);
+
+        for (let i = 1; i <= PHOTO_CONFIG.count; i++) {
+            tryLoadPhoto(i);
+        }
     }
 
     function createPhotoMesh(texture, index, debugName) {
@@ -726,4 +757,5 @@
 </script>
 </body>
 </html>
+
 
